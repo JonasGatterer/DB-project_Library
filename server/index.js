@@ -3,7 +3,8 @@ const app = express();
 const cors = require("cors");
 const pool = require("./db.js")
 
-//start server with "nodemon index"
+//start server with "nodemon index" in server folder
+//start svelte app with "npm start" in client folder
 
 //middleware
 app.use(cors());
