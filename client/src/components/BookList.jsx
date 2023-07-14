@@ -23,6 +23,7 @@ const list = [
           <hr/>
         </div>
       ))}
+      
     </div>
   );
 };

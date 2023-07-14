@@ -24,7 +24,7 @@ CREATE TABLE PersonMiddle (
 );
 
 CREATE TABLE Customer (
-    customerID      VARCHAR PRIMARY KEY,
+    customerID      SERIAL PRIMARY KEY,
     accessCardID    VARCHAR NOT NULL UNIQUE,
     ssn             VARCHAR NOT NULL UNIQUE
 );
@@ -37,37 +37,37 @@ CREATE TABLE AccessCard (
 );
 
 CREATE TABLE Completes (
-    ordersID    VARCHAR PRIMARY KEY,
-    customerID  VARCHAR
+    ordersID    INT PRIMARY KEY,
+    customerID  INT
 );
 
 CREATE TABLE Extends (
-    ordersID    VARCHAR PRIMARY KEY,
-    customerID  VARCHAR
+    ordersID    INT PRIMARY KEY,
+    customerID  INT
 );
 
 CREATE TABLE Orders (
-    ordersID    VARCHAR PRIMARY KEY,
+    ordersID    SERIAL PRIMARY KEY,
     rentalDate  DATE NOT NULL,
     dueDate     DATE NOT NULL
 );
 
 CREATE TABLE ReturnedOrders (
-    ordersID    VARCHAR PRIMARY KEY,
+    ordersID    INT PRIMARY KEY,
     returnDate  DATE NOT NULL
 );
 
 CREATE TABLE ContainsO (
-    ordersID    VARCHAR,
+    ordersID    INT,
     isbn        VARCHAR,
     PRIMARY KEY (ordersID, isbn)
 );
 
 CREATE TABLE Reservation (
-    reservationID   VARCHAR PRIMARY KEY,
+    reservationID   SERIAL PRIMARY KEY,
     reservationDate DATE NOT NULL,
     queueN          INT NOT NULL,
-    customerID      VARCHAR,
+    customerID      INT,
     isbn            VARCHAR
 );
 
@@ -154,7 +154,7 @@ CREATE TABLE Delivery (
     cityA           CHAR,
     zipA            CHAR,
     country         CHAR,
-    ordersID        VARCHAR NOT NULL,
+    ordersID        INT NOT NULL,
     shipmentDate    DATE NOT NULL,
     nameL           CHAR,
     streetL         CHAR,
@@ -260,7 +260,7 @@ ALTER TABLE Delivery
     FOREIGN KEY (nameL, streetL, cityL, zipL) REFERENCES LibraryLocation(nameL, streetL, cityL, zipL) ON DELETE CASCADE ON UPDATE CASCADE;
 
 
--- Inclusions
+-- Inclusions check
 -- Add foreign check constraint to Order table
 ALTER TABLE Orders
     ADD CONSTRAINT check_containsO
@@ -298,3 +298,195 @@ ALTER TABLE LibraryLocation
     CHECK ((nameL, streetL, cityL, zipL) IN (SELECT nameL, streetL, cityL, zipL FROM Employee)),
     ADD CONSTRAINT check_library_delivery
     CHECK ((nameL, streetL, cityL, zipL) IN (SELECT nameL, streetL, cityL, zipL FROM Delivery));
+
+
+--Inclusion function
+-- Create trigger function for check_containsO
+CREATE OR REPLACE FUNCTION check_containsO_func()
+    RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM ContainsO WHERE ordersID = NEW.ordersID
+    ) THEN
+        RAISE EXCEPTION 'Invalid ordersID in ContainsO.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for check_containsO
+CREATE TRIGGER check_containsO_trigger
+    BEFORE INSERT OR UPDATE ON Orders
+    FOR EACH ROW
+    EXECUTE FUNCTION check_containsO_func();
+
+-- Create trigger function for check_publication_hasauthor
+CREATE OR REPLACE FUNCTION check_publication_hasauthor_func()
+    RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM HasAuthor WHERE isbn = NEW.isbn
+    ) THEN
+        RAISE EXCEPTION 'Invalid isbn in HasAuthor.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for check_publication_hasauthor
+CREATE TRIGGER check_publication_hasauthor_trigger
+    BEFORE INSERT OR UPDATE ON Publication
+    FOR EACH ROW
+    EXECUTE FUNCTION check_publication_hasauthor_func();
+
+-- Create trigger function for check_publication_hasgenre
+CREATE OR REPLACE FUNCTION check_publication_hasgenre_func()
+    RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM HasGenre WHERE isbn = NEW.isbn
+    ) THEN
+        RAISE EXCEPTION 'Invalid isbn in HasGenre.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for check_publication_hasgenre
+CREATE TRIGGER check_publication_hasgenre_trigger
+    BEFORE INSERT OR UPDATE ON Publication
+    FOR EACH ROW
+    EXECUTE FUNCTION check_publication_hasgenre_func();
+
+-- Create trigger function for check_publication_stores
+CREATE OR REPLACE FUNCTION check_publication_stores_func()
+    RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Stores WHERE isbn = NEW.isbn
+    ) THEN
+        RAISE EXCEPTION 'Invalid isbn in Stores.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for check_publication_stores
+CREATE TRIGGER check_publication_stores_trigger
+    BEFORE INSERT OR UPDATE ON Publication
+    FOR EACH ROW
+    EXECUTE FUNCTION check_publication_stores_func();
+
+-- Create trigger function for check_genre_hasgenre
+CREATE OR REPLACE FUNCTION check_genre_hasgenre_func()
+    RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM HasGenre WHERE nameG = NEW.nameG
+    ) THEN
+        RAISE EXCEPTION 'Invalid nameG in HasGenre.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for check_genre_hasgenre
+CREATE TRIGGER check_genre_hasgenre_trigger
+    BEFORE INSERT OR UPDATE ON Genre
+    FOR EACH ROW
+    EXECUTE FUNCTION check_genre_hasgenre_func();
+
+-- Create trigger function for check_publisher
+CREATE OR REPLACE FUNCTION check_publisher_func()
+    RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Publication WHERE crn = NEW.crn
+    ) THEN
+        RAISE EXCEPTION 'Invalid crn in Publication.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for check_publisher
+CREATE TRIGGER check_publisher_trigger
+    BEFORE INSERT OR UPDATE ON Publisher
+    FOR EACH ROW
+    EXECUTE FUNCTION check_publisher_func();
+
+-- Create trigger function for check_author
+CREATE OR REPLACE FUNCTION check_author_func()
+    RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM HasAuthor WHERE nameA = NEW.nameA AND lastNameA = NEW.lastNameA AND birthDateA = NEW.birthDateA
+    ) THEN
+        RAISE EXCEPTION 'Invalid author in HasAuthor.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for check_author
+CREATE TRIGGER check_author_trigger
+    BEFORE INSERT OR UPDATE ON Author
+    FOR EACH ROW
+    EXECUTE FUNCTION check_author_func();
+
+-- Create trigger function for check_library_stores
+CREATE OR REPLACE FUNCTION check_library_stores_func()
+    RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Stores WHERE nameL = NEW.nameL AND streetL = NEW.streetL AND cityL = NEW.cityL AND zipL = NEW.zipL
+    ) THEN
+        RAISE EXCEPTION 'Invalid library in Stores.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for check_library_stores
+CREATE TRIGGER check_library_stores_trigger
+    BEFORE INSERT OR UPDATE ON LibraryLocation
+    FOR EACH ROW
+    EXECUTE FUNCTION check_library_stores_func();
+
+-- Create trigger function for check_library_employee
+CREATE OR REPLACE FUNCTION check_library_employee_func()
+    RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Employee WHERE nameL = NEW.nameL AND streetL = NEW.streetL AND cityL = NEW.cityL AND zipL = NEW.zipL
+    ) THEN
+        RAISE EXCEPTION 'Invalid library in Employee.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for check_library_employee
+CREATE TRIGGER check_library_employee_trigger
+    BEFORE INSERT OR UPDATE ON LibraryLocation
+    FOR EACH ROW
+    EXECUTE FUNCTION check_library_employee_func();
+
+-- Create trigger function for check_library_delivery
+CREATE OR REPLACE FUNCTION check_library_delivery_func()
+    RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Delivery WHERE nameL = NEW.nameL AND streetL = NEW.streetL AND cityL = NEW.cityL AND zipL = NEW.zipL
+    ) THEN
+        RAISE EXCEPTION 'Invalid library in Delivery.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for check_library_delivery
+CREATE TRIGGER check_library_delivery_trigger
+    BEFORE INSERT OR UPDATE ON LibraryLocation
+    FOR EACH ROW
+    EXECUTE FUNCTION check_library_delivery_func();

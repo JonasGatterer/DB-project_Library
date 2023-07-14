@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import {Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Login = () => {
-  // Login component logic and UI
-  const [user, setUser] = useState('');
-  const [password, setPassword] = useState('');
+  const [ssn, setSSN] = useState('');
+  const [accessCardID, setAccessCardID] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = () => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
     // Perform authentication logic with email and password
     // If login is successful, redirect to the booklist page
     // Otherwise, display an error message or handle accordingly
@@ -15,10 +16,21 @@ const Login = () => {
     // For example, assuming a successful login:
     //history.push('/books');
     /*<Link to="/books"><button type="submit">Login</button></Link>*/
-    if (user === 'admin' && password === 'admin') {
+    if (ssn === 'admin' && accessCardID === 'admin') {
       navigate('/admin');
     } else {
-      navigate('/books');
+      try {
+        // Make a POST request to the login endpoint with SSN and access card ID
+        //const response = await axios.post('/api/login', {ssn,accessCardID});
+        await axios.post('/api/login', {ssn,accessCardID});
+  
+        // Assuming login is successful, redirect the user to the appropriate page
+        navigate('/books');
+      } catch (error) {
+        console.error('Login failed:', error);
+        // Handle the error as needed
+      }
+      //navigate('/books');
     }
   };
 
@@ -27,24 +39,25 @@ const Login = () => {
       <h2>Login</h2>
       <form onSubmit={handleLogin}>
         <label>
-          Email:
+          SSN:
           <input
             type="text"
-            value={user}
-            onChange={(e) => setUser(e.target.value)}
+            value={ssn}
+            onChange={(e) => setSSN(e.target.value)}
+            required
           />
         </label>
         <br />
         <label>
-          Password:
+          Access Card ID:
           <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            type="text"
+            value={accessCardID}
+            onChange={(e) => setAccessCardID(e.target.value)}
+            required
           />
         </label>
         <br />
-        
         <button type="submit">Login</button>
       </form>
 
