@@ -22,7 +22,7 @@ const Login = () => {
       try {
         // Make a POST request to the login endpoint with SSN and access card ID
         //const response = await axios.post('/api/login', {ssn,accessCardID});
-        await axios.post('/api/login', {ssn,accessCardID});
+        await axios.post('http://localhost:5000/api/login', {ssn,accessCardID});
   
         // Assuming login is successful, redirect the user to the appropriate page
         navigate('/books');

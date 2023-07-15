@@ -2,15 +2,15 @@ CREATE DATABASE library_project;
 
 CREATE TABLE Person (
     ssn         VARCHAR PRIMARY KEY,
-    firstName   CHAR NOT NULL,
-    lastName    CHAR NOT NULL,
+    firstName   CHAR (20) NOT NULL,
+    lastName    CHAR (20) NOT NULL,
     birthDate   DATE NOT NULL,
-    email       CHAR NOT NULL UNIQUE,
-    phoneNumber CHAR NOT NULL UNIQUE,
-    streetA     CHAR NOT NULL,
-    cityA       CHAR NOT NULL,
-    zipA        CHAR NOT NULL,
-    country     CHAR NOT NULL,
+    email       CHAR (50) NOT NULL UNIQUE,
+    phoneNumber CHAR (50) NOT NULL UNIQUE,
+    streetA     CHAR (50) NOT NULL,
+    cityA       CHAR (50) NOT NULL,
+    zipA        CHAR (10) NOT NULL,
+    country     CHAR (50) NOT NULL,
     UNIQUE (streetA,cityA, zipA, country)
 );
 
@@ -20,7 +20,7 @@ CREATE INDEX idx_phoneNumber ON Person (phoneNumber);
 CREATE TABLE PersonMiddle (
     ssn         VARCHAR PRIMARY KEY
                 REFERENCES Person(ssn),
-    middleName  CHAR NOT NULL
+    middleName  CHAR (15) NOT NULL
 );
 
 CREATE TABLE Customer (
@@ -73,45 +73,45 @@ CREATE TABLE Reservation (
 
 CREATE TABLE Publication (
     isbn        VARCHAR PRIMARY KEY,
-    title       CHAR NOT NULL,
+    title       CHAR (15) NOT NULL,
     releaseDate DATE NOT NULL,
     editionN    INT NOT NULL,
-    format      CHAR,
+    format      CHAR (15),
     crn         VARCHAR
 );
 
 CREATE TABLE Genre (
-    nameG   CHAR PRIMARY KEY
+    nameG   CHAR (15) PRIMARY KEY
 );
 
 CREATE TABLE HasGenre (
-    nameG   CHAR,
+    nameG   CHAR (15),
     isbn    VARCHAR,
     PRIMARY KEY (nameG, isbn)
 );
 
 CREATE TABLE TypeP (
-    format          CHAR PRIMARY KEY,
+    format          CHAR (15) PRIMARY KEY,
     accessMethod    BOOLEAN NOT NULL 
 );
 
 CREATE TABLE Publisher (
     crn     VARCHAR PRIMARY KEY,
-    nameP   CHAR NOT NULL
+    nameP   CHAR (15) NOT NULL
 );
 
 CREATE INDEX idx_nameP ON Publisher(nameP);
 
 CREATE TABLE Author (
-    nameA       CHAR,
-    lastNameA   CHAR,
+    nameA       CHAR (15),
+    lastNameA   CHAR (15),
     birthDateA  DATE,
     PRIMARY KEY (nameA,lastNameA,birthDateA)
 );
 
 CREATE TABLE HasAuthor (
-    nameA       CHAR,
-    lastNameA   CHAR,
+    nameA       CHAR (15),
+    lastNameA   CHAR (15),
     birthDateA  DATE,
     isbn        VARCHAR,
     PRIMARY KEY (nameA,lastNameA,birthDateA, isbn)
@@ -119,29 +119,29 @@ CREATE TABLE HasAuthor (
 
 CREATE TABLE Employee (
     badgeNumber VARCHAR PRIMARY KEY,
-    roleE       CHAR NOT NULL,
+    roleE       CHAR (15) NOT NULL,
     ssn         VARCHAR NOT NULL,
-    nameL       CHAR,
-    streetL     CHAR,
-    cityL       CHAR,
-    zipL        CHAR
+    nameL       CHAR (50),
+    streetL     CHAR (50),
+    cityL       CHAR (50),
+    zipL        CHAR (10)
 );
 
 CREATE INDEX idx_ssn ON Employee(ssn);
 
 CREATE TABLE LibraryLocation (
-    nameL       CHAR,
-    streetL     CHAR,
-    cityL       CHAR,
-    zipL        CHAR,
+    nameL       CHAR (50),
+    streetL     CHAR (50),
+    cityL       CHAR (50),
+    zipL        CHAR (10),
     PRIMARY KEY (nameL, streetL, cityL, zipL) 
 );
 
 CREATE TABLE Stores (
-    nameL       CHAR,
-    streetL     CHAR,
-    cityL       CHAR,
-    zipL        CHAR,
+    nameL       CHAR (50),
+    streetL     CHAR (50),
+    cityL       CHAR (50),
+    zipL        CHAR (10),
     isbn        VARCHAR,
     quantity    INT NOT NULL,
     PRIMARY KEY (nameL, streetL, cityL, zipL, isbn)
@@ -150,16 +150,16 @@ CREATE TABLE Stores (
 CREATE TABLE Delivery (
     trackingNumber  VARCHAR PRIMARY KEY,
     deliveryFee     DECIMAL NOT NULL,
-    streetA         CHAR,
-    cityA           CHAR,
-    zipA            CHAR,
-    country         CHAR,
+    streetA         CHAR (50),
+    cityA           CHAR (50),
+    zipA            CHAR (10),
+    country         CHAR (50),
     ordersID        INT NOT NULL,
     shipmentDate    DATE NOT NULL,
-    nameL           CHAR,
-    streetL         CHAR,
-    cityL           CHAR,
-    zipL            CHAR
+    nameL           CHAR (50),
+    streetL         CHAR (50),
+    cityL           CHAR (50),
+    zipL            CHAR (10)
 );
 
 CREATE INDEX idx_ordersID ON Delivery(ordersID);
@@ -167,16 +167,28 @@ CREATE INDEX idx_ordersID ON Delivery(ordersID);
 
 -- Foreign Keys
 -- Add foreign key constraint to Customer table
-ALTER TABLE Customer
-    ADD CONSTRAINT fk_customer_accessCard
-    FOREIGN KEY (accessCardID) REFERENCES AccessCard(accessCardID) ON DELETE CASCADE ON UPDATE CASCADE,
-    ADD CONSTRAINT fk_customer_person
-    FOREIGN KEY (ssn) REFERENCES Person(ssn) ON DELETE CASCADE ON UPDATE CASCADE;
+--ALTER TABLE Customer
+--    ADD CONSTRAINT fk_customer_accessCard
+--    FOREIGN KEY (accessCardID) REFERENCES AccessCard(accessCardID) ON DELETE CASCADE ON UPDATE CASCADE,
+--    ADD CONSTRAINT fk_customer_person
+--    FOREIGN KEY (ssn) REFERENCES Person(ssn) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- Add foreign key constraint to AccessCard table
-ALTER TABLE AccessCard
-    ADD CONSTRAINT fk_accessCard_customer
-    FOREIGN KEY (accessCardID) REFERENCES Customer(accessCardID) ON DELETE CASCADE ON UPDATE CASCADE;
+--ALTER TABLE AccessCard
+--    ADD CONSTRAINT fk_accessCard_customer
+--    FOREIGN KEY (accessCardID) REFERENCES Customer(accessCardID) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Add foreign key constraint to AccessCard table
+--ALTER TABLE AccessCard
+--    ADD CONSTRAINT fk_accessCard_customer
+--   FOREIGN KEY (accessCardID) REFERENCES Customer(accessCardID) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Add foreign key constraints to Customer table
+ALTER TABLE Customer
+    ADD CONSTRAINT fk_customer_person
+    FOREIGN KEY (ssn) REFERENCES Person(ssn) ON DELETE CASCADE ON UPDATE CASCADE,
+    ADD CONSTRAINT fk_customer_accessCard
+    FOREIGN KEY (accessCardID) REFERENCES AccessCard(accessCardID) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE Completes
     ADD CONSTRAINT fk_completes_orders
@@ -192,9 +204,9 @@ ALTER TABLE Extends
     FOREIGN KEY (customerID) REFERENCES Customer (customerID) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- Add foreign key constraint to Orders table
-ALTER TABLE Orders
-    ADD CONSTRAINT fk_orders_completes
-    FOREIGN KEY (ordersID) REFERENCES Completes (ordersID) ON DELETE CASCADE ON UPDATE CASCADE;
+--ALTER TABLE Orders
+--    ADD CONSTRAINT fk_orders_completes
+ --   FOREIGN KEY (ordersID) REFERENCES Completes (ordersID) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- Add foreign key constraint to ReturnedOrders table
 ALTER TABLE ReturnedOrders

@@ -9,10 +9,10 @@ const CreateBook = () => {
     const [editionN, setEditionN] = useState('');
     const [format, setFormat] = useState(''); //chosen from typep
     const [crn, setCrn] = useState(''); //chosen from Publisher
-    const [genre, setGenre] = useState('');
-    const [authorName, setAuthorName] = useState('');
-    const [authorLastName, setAuthorLastName] = useState('');
-    const [authorDoB, setAuthorDoB] = useState('');
+    const [nameG, setGenre] = useState('');
+    const [nameA, setAuthorName] = useState('');
+    const [lastNameA, setAuthorLastName] = useState('');
+    const [birthDateA, setAuthorDoB] = useState('');
     const [nameL, setNameL] = useState('');
     const [streetL, setStreetL] = useState('');
     const [cityL, setCityL] = useState('');
@@ -20,8 +20,11 @@ const CreateBook = () => {
     const [quantity, setQuantity] = useState('');
     const navigate = useNavigate();
 
-    const publisherOptions = ['pubA', 'pubB', 'pubC'];
-    const typePOptions = ['TypeA', 'TypeB', 'TypeC'];
+    const [publisher, setPublisher] = useState('');
+    const publisherOptions = ['Bloomsbury', 'Harper Collins', 'Macmillan'];
+    //const publisherOptions = ['1', '2', '3'];
+
+    const typePOptions = ['Book', 'Science Paper', 'E-Book'];
 
     const [library, setLibrary] = useState('')
     const libOptions = ['Bolzano', 'Bressanone', 'Brunico'];
@@ -30,6 +33,7 @@ const CreateBook = () => {
     const handleSubmit = async(e) => {
         e.preventDefault();
 
+        /*
         if(library === 'Bolzano'){
             setNameL('Biblioteca Bolzano');
             setStreetL('Piazza Universià');
@@ -45,9 +49,18 @@ const CreateBook = () => {
             setStreetL('Via Enrico Fermi');
             setCityL('Brunico');
             setZipL('39031');
-        }
-
+        }*/
+        
         try {
+            
+            if(publisher == 'Bloomsbury'){
+                setCrn('1');
+            }else if(publisher == 'Harper Collins'){
+                setCrn('2');
+            }else/*(publisher == '3')*/{
+                setCrn('3');
+            }
+            
             /*
             const body = {description};
             const response = await fetch('http://localhost:5000/todos', {
@@ -55,19 +68,20 @@ const CreateBook = () => {
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(body)
             });*/
+
             const bookData = {isbn, title, releaseDate, editionN, format, crn};
-            const hasGenreData = {genre, isbn};
-            const authorData = {authorName, authorLastName, authorDoB};
-            const hasAuthorData = {isbn, authorName, authorLastName, authorDoB};
+            const hasGenreData = {nameG, isbn};
+            const authorData = {nameA, lastNameA, birthDateA};
+            const hasAuthorData = {isbn, nameA, lastNameA, birthDateA};
             const storesData = {nameL, streetL, cityL, zipL, isbn, quantity}
             
             // Create the person record
             //const personResponse = await axios.post('/api/persons', personData);
-            await axios.post('/api/newBook', bookData);
-            await axios.post('/api/hasGenre', hasGenreData);
-            await axios.post('/api/newAuthor', authorData);
-            await axios.post('/api/hasAuthor', hasAuthorData);
-            await axios.post('/api/stores', storesData);
+            await axios.post('http://localhost:5000/api/newBook', bookData);
+            await axios.post('http://localhost:5000/api/hasGenre', hasGenreData);
+            await axios.post('http://localhost:5000/api/newAuthor', authorData);
+            await axios.post('http://localhost:5000/api/hasAuthor', hasAuthorData);
+            await axios.post('http://localhost:5000/api/stores', storesData);
         
       
             
@@ -98,7 +112,7 @@ const CreateBook = () => {
             console.error('Creation of new book failed:', error);
             // Handle the error as needed
           }
-
+        
     
         // Perform form validation and data processing here
         // For example, you can make a REST API call to submit the new publication data
@@ -144,47 +158,58 @@ const CreateBook = () => {
                 </label>
                 <br />
                 <label>
-                    CRN:
-                    <select value={crn} onChange={(e) => setCrn(e.target.value)} required>
-                        <option value="">Select CRN</option>
-                        {publisherOptions.map((option) => (
-                        <option key={option} value={option}>
-                            {option}
-                        </option>
-                        ))}
-                    </select>
+                    Publisher:
+                    <input type="text" value={publisher} onChange={(e) =>
+                        {
+                            setPublisher(e.target.value);
+                            if (e.target.value === 'Bloomsbury') {
+                              setCrn('1');
+                            } else if (e.target.value === 'Harper Collins') {
+                              setCrn('2');
+                            } else {
+                              setCrn('3');
+                            }
+                    }} required />
                 </label>
                 <br />
                 <label>
-                    Choose library:
-                    <select value={library} onChange={(e) => setLibrary(e.target.value)} required>
-                        <option value="">Select Format</option>
-                        {libOptions.map((option) => (
-                        <option key={option} value={option}>
-                            {option}
-                        </option>
-                        ))}
-                    </select>
+                    Set Library Name:
+                    <input type="text" value={nameL} onChange={(e) => setNameL(e.target.value)} required />
+                </label>
+                <br />
+                <label>
+                    Set Library Street:
+                    <input type="text" value={streetL} onChange={(e) => setStreetL(e.target.value)} required />
+                </label>
+                <br />
+                <label>
+                    Set Library City:
+                    <input type="text" value={cityL} onChange={(e) => setCityL(e.target.value)} required />
+                </label>
+                <br />
+                <label>
+                    Set Library Zip:
+                    <input type="text" value={zipL} onChange={(e) => setZipL(e.target.value)} required />
                 </label>
                 <br />
                 <label>
                     Genre:
-                    <input type="text" value={genre} onChange={(e) => setGenre(e.target.value)} required />
+                    <input type="text" value={nameG} onChange={(e) => setGenre(e.target.value)} required />
                 </label>
                 <br />
                 <label>
                     Author Name:
-                    <input type="text" value={authorName} onChange={(e) => setAuthorName(e.target.value)} required />
+                    <input type="text" value={nameA} onChange={(e) => setAuthorName(e.target.value)} required />
                 </label>
                 <br />
                 <label>
                     Author Last Name:
-                    <input type="text" value={authorLastName} onChange={(e) => setAuthorLastName(e.target.value)} required />
+                    <input type="text" value={lastNameA} onChange={(e) => setAuthorLastName(e.target.value)} required />
                 </label>
                 <br />
                 <label>
                     Author Date of Birth:
-                    <input type="date" value={authorDoB} onChange={(e) => setAuthorDoB(e.target.value)} required />
+                    <input type="date" value={birthDateA} onChange={(e) => setAuthorDoB(e.target.value)} required />
                 </label>
                 <label>
                     Quantity:

@@ -11,9 +11,9 @@ const Register = () => {
   const [ssn, setSSN] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [street, setStreet] = useState('');
-  const [city, setCity] = useState('');
-  const [zip, setZip] = useState('');
+  const [streetA, setStreet] = useState('');
+  const [cityA, setCity] = useState('');
+  const [zipA, setZip] = useState('');
   const [country, setCountry] = useState('');
   const navigate = useNavigate();
 
@@ -21,35 +21,40 @@ const Register = () => {
     e.preventDefault();
 
     // Create the person data object
-    const personData = {
-      ssn,
-      firstName,
-      lastName,
-      //middleName,
-      birthDate,
-      email,
-      phoneNumber,
-      street,
-      city,
-      zip,
-      country,
-    };
+    
 
     try {
       // Create the person record
       //const personResponse = await axios.post('/api/persons', personData);
-      await axios.post('/api/persons', personData);
+      const personData = {
+        ssn,
+        firstName,
+        lastName,
+        birthDate,
+        email,
+        phoneNumber,
+        streetA,
+        cityA,
+        zipA,
+        country,
+      };
 
+      await axios.post('http://localhost:5000/api/persons', personData);
+
+      const accessCardID = generateAccessCardID();
       // Create the access card for the registered person
       const accessCardData = {
-        //dont we want to do serial???
-        accessCardID: generateAccessCardID(), // Generate a unique access card ID or use an appropriate method
+        accessCardID: accessCardID, // Generate a unique access card ID or use an appropriate method
         issueDate: new Date().toISOString().split('T')[0],
         expiringDate: calculateExpiringDate(), // Implement your own logic for calculating the expiring date
         fineBalance: 0,
       };
 
-      await axios.post('/api/access-cards', accessCardData);
+      await axios.post('http://localhost:5000/api/access-cards', accessCardData);
+
+      const customerData = {accessCardID, ssn};
+      await axios.post('http://localhost:5000/api/customer', customerData);
+      
 
       alert(`Remember your Access Card ID: ${accessCardData.accessCardID}`);
 
@@ -170,7 +175,7 @@ const Register = () => {
           Street:
           <input
             type="text"
-            value={street}
+            value={streetA}
             onChange={(e) => setStreet(e.target.value)}
             required
           />
@@ -180,7 +185,7 @@ const Register = () => {
           City:
           <input
             type="text"
-            value={city}
+            value={cityA}
             onChange={(e) => setCity(e.target.value)}
             required
           />
@@ -190,7 +195,7 @@ const Register = () => {
           ZIP:
           <input
             type="text"
-            value={zip}
+            value={zipA}
             onChange={(e) => setZip(e.target.value)}
             required
           />
