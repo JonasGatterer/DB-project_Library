@@ -25,7 +25,7 @@ CREATE TABLE PersonMiddle (
 
 CREATE TABLE Customer (
     customerID      SERIAL PRIMARY KEY,
-    accessCardID    VARCHAR NOT NULL UNIQUE,
+    accessCardID      VARCHAR NOT NULL UNIQUE,
     ssn             VARCHAR NOT NULL UNIQUE
 );
 
@@ -35,6 +35,41 @@ CREATE TABLE AccessCard (
     expiringDate    DATE NOT NULL,
     fineBalance     INT DEFAULT 0
 );
+
+CREATE OR REPLACE FUNCTION check_expiration_date()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.expiringDate <= NEW.issueDate + INTERVAL '1 year' THEN
+        RAISE EXCEPTION 'ExpiringDate must be one year later than IssueDate.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER enforce_expiration_date
+BEFORE INSERT OR UPDATE ON AccessCard
+FOR EACH ROW
+EXECUTE FUNCTION check_expiration_date();
+
+
+CREATE OR REPLACE FUNCTION check_fine_balance()
+  RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.returnDate <= (SELECT dueDate FROM Orders WHERE ordersID = NEW.ordersID) THEN
+    IF NEW.fineBalance <> 0 THEN
+      RAISE EXCEPTION 'FineBalance must be zero when ReturnDate is before or equal to DueDate.';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER access_card_check_fine_balance
+BEFORE INSERT OR UPDATE ON AccessCard
+FOR EACH ROW
+EXECUTE FUNCTION check_fine_balance();
+
 
 CREATE TABLE Completes (
     ordersID    INT PRIMARY KEY,
@@ -52,10 +87,49 @@ CREATE TABLE Orders (
     dueDate     DATE NOT NULL
 );
 
+CREATE OR REPLACE FUNCTION check_rental_date()
+RETURNS TRIGGER AS $$
+DECLARE
+    rental_date TIMESTAMP;
+    due_date TIMESTAMP;
+BEGIN
+    SELECT rentalDate INTO rental_date FROM Orders WHERE ordersID = NEW.ordersID;
+    SELECT dueDate INTO due_date FROM Orders WHERE ordersID = NEW.ordersID;
+
+    IF rental_date + INTERVAL '1 month' <> due_date THEN
+        RAISE EXCEPTION 'Due Date must be one month after the Rental Date';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_rental_date_trigger
+BEFORE INSERT OR UPDATE ON Orders
+FOR EACH ROW
+EXECUTE FUNCTION check_rental_date();
+
+
 CREATE TABLE ReturnedOrders (
     ordersID    INT PRIMARY KEY,
     returnDate  DATE NOT NULL
 );
+
+CREATE OR REPLACE FUNCTION check_return_date()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.returnDate > NEW.dueDate THEN
+    RAISE EXCEPTION 'Return date must be on or before the due date.';
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER enforce_return_date
+BEFORE INSERT OR UPDATE ON ReturnedOrders
+FOR EACH ROW
+EXECUTE FUNCTION check_return_date();
 
 CREATE TABLE ContainsO (
     ordersID    INT,
@@ -70,6 +144,26 @@ CREATE TABLE Reservation (
     customerID      INT,
     isbn            VARCHAR
 );
+
+CREATE OR REPLACE FUNCTION check_publication_queue()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM Publications
+        WHERE ordersID = NEW.isbn
+        AND queueN <> 0
+    ) THEN
+        RAISE EXCEPTION 'Cannot create order. Publication queue is not zero.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER enforce_publication_queue
+BEFORE INSERT ON Reservation
+FOR EACH ROW
+EXECUTE FUNCTION check_publication_queue();
 
 CREATE TABLE Publication (
     isbn        VARCHAR PRIMARY KEY,
@@ -164,25 +258,23 @@ CREATE TABLE Delivery (
 
 CREATE INDEX idx_ordersID ON Delivery(ordersID);
 
+CREATE OR REPLACE FUNCTION check_shipment_date()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.shipmentDate <= (SELECT rentalDate FROM Orders WHERE ordersID = NEW.ordersID) THEN
+        RAISE EXCEPTION 'The Shipment Date must be after the Rental Date of the Order.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER shipment_date_trigger
+BEFORE INSERT OR UPDATE ON Delivery
+FOR EACH ROW
+EXECUTE FUNCTION check_shipment_date();
+
 
 -- Foreign Keys
--- Add foreign key constraint to Customer table
---ALTER TABLE Customer
---    ADD CONSTRAINT fk_customer_accessCard
---    FOREIGN KEY (accessCardID) REFERENCES AccessCard(accessCardID) ON DELETE CASCADE ON UPDATE CASCADE,
---    ADD CONSTRAINT fk_customer_person
---    FOREIGN KEY (ssn) REFERENCES Person(ssn) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- Add foreign key constraint to AccessCard table
---ALTER TABLE AccessCard
---    ADD CONSTRAINT fk_accessCard_customer
---    FOREIGN KEY (accessCardID) REFERENCES Customer(accessCardID) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- Add foreign key constraint to AccessCard table
---ALTER TABLE AccessCard
---    ADD CONSTRAINT fk_accessCard_customer
---   FOREIGN KEY (accessCardID) REFERENCES Customer(accessCardID) ON DELETE CASCADE ON UPDATE CASCADE;
-
 -- Add foreign key constraints to Customer table
 ALTER TABLE Customer
     ADD CONSTRAINT fk_customer_person
@@ -190,6 +282,7 @@ ALTER TABLE Customer
     ADD CONSTRAINT fk_customer_accessCard
     FOREIGN KEY (accessCardID) REFERENCES AccessCard(accessCardID) ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- Add foreign key constraints to Completes table
 ALTER TABLE Completes
     ADD CONSTRAINT fk_completes_orders
     FOREIGN KEY (ordersID) REFERENCES Orders (ordersID) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -202,11 +295,6 @@ ALTER TABLE Extends
     FOREIGN KEY (ordersID) REFERENCES Orders (ordersID) ON DELETE CASCADE ON UPDATE CASCADE,
     ADD CONSTRAINT fk_extends_customer
     FOREIGN KEY (customerID) REFERENCES Customer (customerID) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- Add foreign key constraint to Orders table
---ALTER TABLE Orders
---    ADD CONSTRAINT fk_orders_completes
- --   FOREIGN KEY (ordersID) REFERENCES Completes (ordersID) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- Add foreign key constraint to ReturnedOrders table
 ALTER TABLE ReturnedOrders

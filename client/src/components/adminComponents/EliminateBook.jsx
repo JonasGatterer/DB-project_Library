@@ -26,29 +26,42 @@ const EliminateBook = () => {
         }
     };
 
+    const getDate = (newDate) => {
+        const date = newDate ? new Date(newDate) : null;
+    
+        if(date){
+          const year = date.toISOString().slice(0, 4);
+          const month = date.toISOString().slice(5, 7);
+          const day = date.toISOString().slice(8, 10);
+          return(year + "-" + month + "-" + day);
+        }else{
+          console.log('Invalid date');
+        }
+    }
+
     return(
         <div>
-            <h2>Publication List</h2>
+            <h2>Delete Publications</h2>
             <table>
                 <thead>
                 <tr>
-                    <th>ISBN</th>
-                    <th>Title</th>
-                    <th>Release Date</th>
-                    <th>Edition</th>
-                    <th>Action</th>
+                    |<th>ISBN</th>
+                    |<th>Title</th>
+                    |<th>Release Date</th>
+                    |<th>Edition</th>
+                    |<th>Action</th>|
                 </tr>
                 </thead>
                 <tbody>
                 {publications.map((publication) => (
                     <tr key={publication.isbn}>
-                    <td>{publication.isbn}</td>
-                    <td>{publication.title}</td>
-                    <td>{publication.releaseDate}</td>
-                    <td>{publication.editionN}</td>
-                    <td>
+                    |<td>{publication.isbn}</td>
+                    |<td>{publication.title}</td>
+                    |<td>{getDate(publication.releasedate)}</td>
+                    |<td>{publication.editionn}</td>
+                    |<td>
                         <button onClick={() => deletePublication(publication.isbn)}>Delete</button>
-                    </td>
+                    </td>|
                     </tr>
                 ))}
                 </tbody>

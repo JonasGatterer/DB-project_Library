@@ -9,6 +9,7 @@ const BookDetails = () => {
 
   const params = useParams();
   const [book, setBook] = useState('');
+  const [stores, setStores] = useState('');
   const navigate = useNavigate();
   //const [orderID, setOrderID] = useState(null); // State variable to hold the order ID
   const [reservationID, setReservationID] = useState(null);
@@ -34,9 +35,20 @@ const BookDetails = () => {
         setBook(response.data);
       } catch (error) {
         console.error('Error fetching book details:', error);
-      }
+      }    
     };
 
+    const fetchStoreDetails = async () => {
+      try {
+        const storesResponse = await axios.post(`http://localhost:5000/api/getStores`, {
+          isbn: params.id,
+        });
+        setStores(storesResponse.data);
+      } catch (error) {
+        console.error('Error fetching store details:', error);
+      }
+    }
+    fetchStoreDetails();
     fetchBookDetails();
   }, [params.id]);
 
@@ -53,7 +65,7 @@ const BookDetails = () => {
       // Insert into Completes table
       await axios.post('http://localhost:5000/api/createCompletes', {
         ordersID: orderResponse.data.orderID,
-        customerID: '2',
+        customerID: '5',
       });
 
       // Insert into ContainsO table
@@ -72,8 +84,20 @@ const BookDetails = () => {
 
   const createReservation = async () => {
     try {
+      const storesResponse = await axios.post(`http://localhost:5000/api/getStores`, {
+        isbn: params.id,
+      });
+      const numberOfPublications = storesResponse.data.quantity;
+      const numOfPub = parseInt(numberOfPublications, 10);
+
+      if (numOfPub > 0) {
+        alert('Reservation is only possible if there are no copies of the given Publication left!');
+        return;
+      }
+
+
       const response = await axios.post(`http://localhost:5000/api/createReservation`, {
-        customerID: '2',
+        customerID: '5',
         isbn: params.id,
       });
       setReservationID(response.data.reservationID);
@@ -103,12 +127,27 @@ const BookDetails = () => {
     return `${year}-${month}-${day}`;
   };
 
+  const getDate = (newDate) => {
+    const date = newDate ? new Date(newDate) : null;
+
+    if(date){
+      const year = date.toISOString().slice(0, 4);
+      const month = date.toISOString().slice(5, 7);
+      const day = date.toISOString().slice(8, 10);
+      return(year + "-" + month + "-" + day);
+    }else{
+      console.log('Invalid date');
+    }
+  }
+  
   return(
     <div>
-          <p><strong>ISBN:</strong> {book.isbn}</p>
-          <p><strong>Title:</strong> {book.title}</p>
-          <p><strong>Release Date:</strong> {book.releaseDate}</p>
-          <p><strong>Edition:</strong> {book.editionN}</p>
+          <p><strong>ISBN: </strong> {book.isbn}</p>
+          <p><strong>Title: </strong> {book.title}</p>
+          <p><strong>Release Date: </strong> {getDate(book.releasedate)}</p>
+          <p><strong>Edition: </strong> {book.editionn}</p>
+          <p><strong>Store location: </strong>{stores.namel}, {stores.streetl}, {stores.cityl}, {stores.zipl}</p>
+          <p><strong>Quantity: </strong>{stores.quantity}</p>
           <button onClick={() => createOrder()}>Order Book</button>
           <button onClick={() => createReservation()}>Make a reservation</button>
     </div>

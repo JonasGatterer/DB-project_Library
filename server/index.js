@@ -11,6 +11,80 @@ app.use(cors());
 app.use(express.json());
 
 //routes
+// Endpoint to Delete a reservation
+app.delete('/api/deleteReservation/:customerID', async (req, res) => {
+    try {
+        const { customerID } = req.params;
+        await pool.query('DELETE FROM Reservation WHERE customerID = $1', [customerID]);
+        res.sendStatus(200); // Send HTTP status code 200 (OK) if the deletion is successful
+    } catch (error) {
+        console.error('Error deleting reservation:', error);
+        res.sendStatus(500); // Send HTTP status code 500 (Internal Server Error) for error handling
+    }
+});
+  
+// Endpoint to Delete an order
+app.delete('/api/deleteOrder/:ordersID', async (req, res) => {
+    try {
+        const { ordersID } = req.params;
+        await pool.query('DELETE FROM Orders WHERE ordersID = $1', [ordersID]);
+        res.sendStatus(200); // Send HTTP status code 200 (OK) if the deletion is successful
+    } catch (error) {
+        console.error('Error deleting order:', error);
+        res.sendStatus(500); // Send HTTP status code 500 (Internal Server Error) for error handling
+    }
+});
+
+// Endpoint of getting the stores items
+app.post('/api/getStores', async (req, res) => {
+    try {
+        const { isbn } = req.body;
+        const result = await pool.query('SELECT quantity, nameL, streetL, cityL, zipL FROM Stores WHERE isbn = $1', [isbn]);
+        if (result.rows.length === 0) {
+          return res.sendStatus(404); // Send HTTP status code 404 (Not Found) if the book is not found in the stores
+        }
+        res.json(result.rows[0]); // Send the retrieved quantity as JSON response
+    } catch (error) {
+        console.error('Error fetching store details:', error);
+        res.sendStatus(500); // Send HTTP status code 500 (Internal Server Error) for error handling
+    }
+});
+
+// Endpont of getting all reservations
+app.get('/api/getReservations', async (req, res) => {
+    try {
+        const { customerID } = req.query;
+        const result = await pool.query(
+            'SELECT p.isbn, p.title, r.queuen, r.reservationdate FROM Reservation r JOIN Publication p ON r.isbn = p.isbn WHERE customerID = $1',
+            [customerID]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching reservations:', error);
+        res.sendStatus(500); // Send HTTP status code 500 (Internal Server Error) for error handling
+    }
+});
+
+//Endpoint of getting all orders
+app.get('/api/getOrders', async (req, res) => {
+    try {
+        const { customerID } = req.query;
+        const result = await pool.query(
+            `SELECT o.ordersID, o.rentalDate, o.dueDate, p.title, p.isbn
+            FROM Orders o
+            INNER JOIN ContainsO co ON o.ordersID = co.ordersID
+            INNER JOIN Publication p ON co.isbn = p.isbn
+            INNER JOIN Completes cm ON cm.customerID = $1
+            WHERE cm.ordersID = co.ordersID`,
+            [customerID]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        res.sendStatus(500); // Send HTTP status code 500 (Internal Server Error) for error handling
+    }
+});
+
 // Endpoint to create a reservation
 app.post('/api/createReservation', async (req, res) => {
     try {

@@ -18,6 +18,15 @@ const BookList = () => {
         }
     };
 
+    const getDate = (newDate) => {
+      const date = new Date(newDate);
+
+      const year = date.toISOString().slice(0, 4);
+      const month = date.toISOString().slice(5, 7);
+      const day = date.toISOString().slice(8, 10);
+      return(year + "-" + month + "-" + day);
+    }
+
   // booksData.js
   //old book list:
   /*
@@ -51,22 +60,21 @@ const list = [
           <table>
               <thead>
               <tr>
-                  <th>ISBN</th>
-                  <th>Title</th>
-                  <th>Release Date</th>
-                  <th>Edition</th>
-                  <th>Action</th>
-                  <th>Go to</th>
+                  |<th>ISBN</th>
+                  |<th>Title</th>
+                  |<th>Release Date</th>
+                  |<th>Edition</th>
+                  |<th>Go to</th>|
               </tr>
               </thead>
               <tbody>
               {publications.map((publication) => (
                   <tr key={publication.isbn}>
-                  <td>{publication.isbn}</td>
-                  <td>{publication.title}</td>
-                  <td>{publication.releaseDate}</td>
-                  <td>{publication.editionN}</td>
-                  <td><Link to={`/book/${publication.isbn}`}>{publication.title}</Link></td>
+                  |<td>{publication.isbn}</td>
+                  |<td>{publication.title}</td>
+                  |<td>{getDate(publication.releasedate)}</td>
+                  |<td>{publication.editionn}</td>
+                  |<td><Link to={`/book/${publication.isbn}`}>{publication.title}</Link></td>|
                   {/*<td>
                       <button onClick={() => deletePublication(publication.isbn)}>Delete</button>
                   </td>*/}
